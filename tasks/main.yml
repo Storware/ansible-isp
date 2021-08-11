@@ -1,0 +1,31 @@
+---
+- name: Setting up IBM Spectrum Protect Server FQDN
+  set_fact:
+    isp_fqdn: "{{ ansible_nodename }}"
+  when: isp_fqdn is undefined
+
+- name: Using the following IBM Spectrum Protect Server FQDN
+  debug:
+    msg: "IBM Spectrum Protect Server FQDN: {{ isp_fqdn }}"
+
+- name: Show IBM Spectrum Protect Server URL
+  debug:
+    msg: "IBM Spectrum Protect Server URL: {{ isp_download_url }}"
+
+- name: Make sure temporary installation directory exists
+  file:
+    state: directory
+    path: "{{ isp_installer_local_dir }}"
+    mode: '0770'
+
+- name: Download IBM Spectrum Protect Server
+  get_url:
+    url: "{{ isp_download_url }}"
+    dest: "{{ isp_installer_local_path }}"
+    mode: "0554"
+
+- name: Extact installer files
+  shell:
+    cmd: "./{{ isp_installer_filename }}"
+    chdir: "{{ isp_installer_local_dir }}"
+    creates: "{{ isp_installer_local_dir }}/install.sh"
