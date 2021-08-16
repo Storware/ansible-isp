@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<agent-input>
+  <variables>
+    <variable name='sharedLocation' value='{{ iim_shared_dir }}'/>
+  </variables>
+  <server>
+    <repository location='repository'/>
+    <repository location='im64'/>
+  </server>
+  <profile id='IBM Installation Manager' installLocation='{{ iim_dir }}' kind='self'>
+    <data key='cic.selector.arch' value='x86_64'/>
+    <data key='cic.selector.nl' value='de,no,fi,ru,hr,pt_BR,fr,hu,zh_TW,zh_HK,sk,sl,sv,ko,el,en,it,iw,zh,es,cs,ar,th,ja,pl,da,nl,tr'/>
+  </profile>
+  <install>
+    <offering profile='IBM Installation Manager' id='com.ibm.cic.agent' version='{{ imm_version }}' features='agent_core,agent_jre,agent_web'/>
+  </install>
+  <profile id='IBM Spectrum Protect' installLocation='{{ isp_dir }}'>
+    <data key='cic.selector.arch' value='x86_64'/>
+    <data key='user.entitlement,com.tivoli.dsm.server' value='2'/>
+    <data key='user.license,com.tivoli.dsm.server' value='tsmee'/>
+    <data key='user.license_option,com.tivoli.dsm.server' value='a'/>
+    <data key='user.license,com.tivoli.dsm.stagent' value='san'/>
+    <data key='user.license_option,com.tivoli.dsm.stagent' value='a'/>
+  </profile>
+  <install>
+    <offering profile='IBM Spectrum Protect' id='com.tivoli.dsm.server' features='com.tivoli.dsm.server.main,com.tivoli.dsm.gskit,com.tivoli.dsm.clientapi,com.ibm.java.jre'/>
+    <offering profile='IBM Spectrum Protect' id='com.tivoli.dsm.lang' features='com.tivoli.dsm.lang.english'/>
+    <offering profile='IBM Spectrum Protect' id='com.tivoli.dsm.stagent' features='com.tivoli.dsm.stagent.main,com.tivoli.dsm.gskit'/>
+    <offering profile='IBM Spectrum Protect' id='com.tivoli.dsm.devices' features='com.tivoli.dsm.devices.main'/>
+  </install>
+  <preference name='com.ibm.cic.common.core.preferences.eclipseCache' value='${sharedLocation}'/>
+</agent-input>
