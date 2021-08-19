@@ -1,0 +1,47 @@
+---
+- name: Setting up IBM Spectrum Protect Server FQDN variable
+  set_fact:
+    isp_fqdn: "{{ ansible_nodename }}"
+  when: isp_fqdn is undefined
+
+- name: Setting up IBM Spectrum Protect IP variable - trying address from SSH connection variable
+  set_fact:
+    isp_ip: "{{ ansible_facts['env']['SSH_CONNECTION'].split()[2] }}"
+  when: "isp_ip is undefined and ansible_facts['env']['SSH_CONNECTION'] is defined"
+
+- name: Setting up IBM Spectrum Protect IP variable - trying default address
+  set_fact:
+    isp_ip: "{{ ansible_facts['default_ipv4']['address'] }}"
+  when: "isp_ip is undefined and ansible_facts['default_ipv4']['address'] is defined"
+
+- name: Setting up IBM Spectrum Protect IP variable - trying first address
+  set_fact:
+    isp_ip: "{{ ansible_facts['all_ipv4_addresses'][0] }}"
+  when: isp_ip is undefined
+
+- name: Using the following IBM Spectrum Protect Server FQDN
+  debug:
+    msg: "IBM Spectrum Protect Server FQDN: {{ isp_fqdn }} and IP: {{ isp_ip }}"
+
+- name: Update /etc/hosts with IP and FQDN
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*\s+{{ isp_fqdn }}$'
+    line: "{{ isp_ip }}   {{ isp_fqdn }}"
+    state: present
+
+- name: Firewall - open IBM Spectrum Protect Server port
+  firewalld:
+    port: "{{ isp_port }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Firewall - open IBM Spectrum Protect Server port (SSL)
+  firewalld:
+    port: "{{ isp_port_ssl }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled

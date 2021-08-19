@@ -1,0 +1,53 @@
+---
+- name: Ensure group {{ isp_group }} exists
+  group:
+    name: "{{ isp_group }}"
+    state: present
+
+- name: Ensure user {{ isp_user }} exists
+  user:
+    name: "{{ isp_user }}"
+    uid: "{{ isp_uid }}"
+    comment: "IBM Spectrum Protect user"
+    groups: "{{ isp_group }}"
+    state: present
+
+- name: Set user limits for {{ isp_user }}
+  pam_limits:
+    domain: "{{ isp_user }}"
+    limit_type: '-'
+    limit_item: "{{ item.limit_item }}"
+    value: "{{ item.value }}"
+    dest: "{{ isp_limits_file }}"
+  loop:
+    - limit_item: core
+      value: "unlimited"
+      description: "core files"
+    - limit_item: data
+      value: "unlimited"
+      description: "max size of data segment"
+    - limit_item: fsize
+      value: "unlimited"
+      description: "max file size"
+    - limit_item: nofile
+      value: "65536"
+      description: "max no. of opened files"
+    - limit_item: cpu
+      value: "unlimited"
+      description: "max amount of processor time"
+    - limit_item: nproc
+      value: "16384"
+      description: "max no. of user processes"
+
+- name: Make sure numad service is stopped and disabled
+  service:
+    name: numad
+    daemon-reload: yes
+    state: stopped
+    enabled: false
+  when: ansible_facts.services['numad.service'] is defined
+
+- name: Set SELinux mode to permissive
+  selinux:
+    policy: targeted
+    state: permissive

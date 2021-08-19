@@ -1,0 +1,57 @@
+---
+- name: Show IBM Spectrum Protect Server URL
+  debug:
+    msg: "IBM Spectrum Protect Server URL: {{ isp_download_url }}"
+
+- name: Make sure temporary installation directory exists
+  file:
+    state: directory
+    path: "{{ isp_installer_local_dir }}"
+    mode: '0770'
+
+- name: Download IBM Spectrum Protect Server
+  get_url:
+    url: "{{ isp_download_url }}"
+    dest: "{{ isp_installer_local_path }}"
+    mode: "0554"
+
+- name: Install required dependencies
+  package:
+    name:
+      - ksh
+      - libnsl
+      - libaio
+      - libstdc++-devel.i686
+      - libstdc++-devel.x86_64
+      - numactl-libs
+
+- name: Extact IBM Spectrum Protect Server installer files
+  shell:
+    cmd: "./{{ isp_installer_filename }}"
+    chdir: "{{ isp_installer_local_dir }}"
+    creates: "{{ isp_installer_local_dir }}/install.sh"
+
+- name: Find IBM Installation Manager agent files
+  find:
+    paths: "{{ isp_installer_local_dir }}/im64/Offerings"
+    patterns: 'com.ibm.cic.agent_*[0-9].jar'
+  register: find_output
+
+- name: Detect IBM Installation Manager version
+  set_fact:
+    imm_version: "{{ find_output.files[0].path | regex_replace('.*/com.ibm.cic.agent_([0-9_.]+)*[.].*', '\\1') }}"
+
+- name: Show IBM Installation Manager version
+  debug:
+    msg: "IBM Installation Manager version: {{ imm_version }}"
+
+- name: Prepare IBM Spectrum Protect Server installer response file
+  template:
+    src: "{{ isp_response_file }}.j2"
+    dest: "{{ isp_installer_local_dir }}/{{ isp_response_file }}"
+
+- name: Install IBM Spectrum Protect Server
+  shell:
+    cmd: "./install.sh -s -input {{ isp_response_file }} -acceptLicense -vmargs '-DBYPASS_TSM_REQ_CHECKS=true'"
+    chdir: "{{ isp_installer_local_dir }}"
+    creates: "{{ isp_dir }}"
