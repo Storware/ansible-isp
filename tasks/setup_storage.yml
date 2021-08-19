@@ -1,0 +1,107 @@
+---
+- name: Build unique list of provided block devices
+  set_fact:
+    devices: '{{ (devices | default([])) | union([item]) | flatten }}'
+  loop:
+    - "{{ isp_db_disk }}"
+    - "{{ isp_activelog_disk }}"
+    - "{{ isp_archlog_disk }}"
+    - "{{ isp_dbbackup_disk }}"
+    - "{{ isp_storage_disks }}"
+
+- name: Show all block devices in configuration
+  debug:
+    msg: "Block devices in configuration: {{ devices }}"
+
+- name: Check if provided block devices are unique
+  fail:
+    msg: "Provided block storage devices are not unique"
+  when: "devices | unique | length != (4 + isp_storage_disks|length)"
+
+- name: Check if block devices are present
+  debug:
+    msg: "Block devices in configuration: {{ devices }}"
+
+- name: Build unique list of provided mount points for block devices
+  set_fact:
+    mountpoints: '{{ (mountpoints | default([])) | union([item]) | flatten }}'
+  loop:
+    - "{{ isp_db_path }}"
+    - "{{ isp_activelog_path }}"
+    - "{{ isp_archlog_path }}"
+    - "{{ isp_dbbackup_path }}"
+    - "{{ isp_storage_paths }}"
+
+- name: Check if provided mount points for block devices are unique
+  fail:
+    msg: "Provided block storage devices are not unique"
+  when: "mountpoints | flatten | unique | length != (4 + isp_storage_paths|length)"
+
+- name: Check if all provided storage devices have mount point defined
+  fail:
+    msg: "Lengths of storage block devices list (isp_storage_disks) and their corresponding mount point list (isp_storage_paths) differs"
+  when: "isp_storage_disks|length != isp_storage_paths|length"
+
+- name: Chake if all storage devices are present
+  file:
+    state: file
+    path: "{{ item }}"
+  loop: "{{ devices }}"
+
+- name: Make sure all mount mount points exist
+  file:
+    state: directory
+    path: "{{ item }}"
+  loop: "{{ mountpoints }}"
+
+- name: Make sure all mount mount points exist
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: "0770"
+  loop: "{{ mountpoints }}"
+
+- set_fact:
+    devices_and_fs_info: "{{ devices_and_fs_info | default([]) | union([item]) }}"
+  loop:
+    - { dev: "{{ isp_db_disk }}", fs_type: "{{ isp_db_fs_type }}", mkfs_opts: "{{ isp_db_mkfs_opts }}", path: "{{ isp_db_path }}", fs_mount_opts: "{{ isp_db_fs_mount_opts }}" }
+    - { dev: "{{ isp_activelog_disk }}", fs_type: "{{ isp_activelog_fs_type }}", mkfs_opts: "{{ isp_activelog_mkfs_opts }}", path: "{{ isp_activelog_path }}", fs_mount_opts: "{{ isp_activelog_fs_mount_opts }}" }
+    - { dev: "{{ isp_archlog_disk }}", fs_type: "{{ isp_archlog_fs_type }}", mkfs_opts: "{{ isp_archlog_mkfs_opts }}", path: "{{ isp_archlog_path }}", fs_mount_opts: "{{ isp_archlog_fs_mount_opts }}" }
+    - { dev: "{{ isp_dbbackup_disk }}", fs_type: "{{ isp_dbbackup_fs_type }}", mkfs_opts: "{{ isp_dbbackup_mkfs_opts }}", path: "{{ isp_dbbackup_path }}", fs_mount_opts: "{{ isp_dbbackup_fs_mount_opts }}" }
+
+- debug:
+    var: devices_and_fs_info
+
+- set_fact:
+    devices_and_fs_info: "{{ devices_and_fs_info | union([dict(dev=item, fs_type=isp_storage_fs_type, mkfs_opts=isp_storage_mkfs_opts, path=isp_storage_paths[i], fs_mount_opts=isp_storage_fs_mount_opts)]) }}"
+  loop: "{{ isp_storage_disks }}"
+  loop_control:
+    index_var: i
+
+- debug:
+    var: devices_and_fs_info
+
+- name: Create filesystem for each device
+  filesystem:
+    fstype: "{{ item.fs_type }}"
+    dev: "{{ item.dev }}"
+    opts: "{{ item.mkfs_opts }}"
+  loop: "{{ devices_and_fs_info }}"
+
+- name: Mount all file systems
+  mount:
+    path: "{{ item.path }}"
+    src: "{{ item.dev }}"
+    fstype: "{{ item.fs_type }}"
+    opts: "{{ item.fs_mount_opts }}"
+    state: mounted
+  loop: "{{ devices_and_fs_info }}"
+
+- name: Set permissions on each mount point
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ isp_user }}"
+    group: "{{ isp_group }}"
+    mode: "0770"
+  loop: "{{ devices_and_fs_info }}"

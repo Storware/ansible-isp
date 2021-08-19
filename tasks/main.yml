@@ -1,7 +1,14 @@
 ---
+- debug:
+    var: ansible_facts
+
+- name: Setup storage
+  include_tasks: setup_storage.yml
+
 - name: Disable SELinux
   selinux:
-    state: disabled
+    policy: targeted
+    state: permissive
 
 - name: Setting up IBM Spectrum Protect Server FQDN
   set_fact:
@@ -22,17 +29,22 @@
     path: "{{ isp_installer_local_dir }}"
     mode: '0770'
 
-- name: Download IBM Spectrum Protect Server
-  get_url:
-    url: "{{ isp_download_url }}"
-    dest: "{{ isp_installer_local_path }}"
-    mode: "0554"
+#- name: Download IBM Spectrum Protect Server
+#  get_url:
+#    url: "{{ isp_download_url }}"
+#    dest: "{{ isp_installer_local_path }}"
+#    mode: "0554"
 
 - name: Install required dependencies
   package:
     name:
       - ksh
       - libnsl
+      - sysstat
+      - libaio
+      - libstdc++-devel.i686
+      - libstdc++-devel.x86_64
+      - numactl-libs
 
 - name: Extact IBM Spectrum Protect Server installer files
   shell:
@@ -63,3 +75,55 @@
     cmd: "./install.sh -s -input {{ isp_response_file }} -acceptLicense -vmargs '-DBYPASS_TSM_REQ_CHECKS=true'"
     chdir: "{{ isp_installer_local_dir }}"
     creates: "{{ isp_dir }}"
+
+- name: Firewall - open IBM Spectrum Protect Server port
+  firewalld:
+    port: "{{ isp_port }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Firewall - open IBM Spectrum Protect Server port (SSL)
+  firewalld:
+    port: "{{ isp_port_ssl }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Make sure numad service is stopped and disabled
+  service:
+    name: numad
+    daemon-reload: yes
+    state: stopped
+    enabled: false
+  when: ansible_facts.services['numad.service'] is defined
+
+- name: Ensure group {{ isp_group }} exists
+  group:
+    name: "{{ isp_group }}"
+    state: present
+
+- name: Ensure user {{ isp_user }} exists
+  user:
+    name: "{{ isp_user }}"
+    uid: "{{ isp_uid }}"
+    comment: "IBM Spectrum Protect user"
+    groups: "{{ isp_group }}"
+    state: present
+
+- name: Set user limits for {{ isp_user }}
+  pam_limits:
+    domain: "{{ isp_user }}"
+    limit_type: '-'
+    limit_item: "{{ item.limit_item }}"
+    value: "{{ item.value }}"
+    dest: "{{ isp_limits_file }}"
+  loop:
+    - { limit_item: core,   value: "unlimited", description: "core files" }
+    - { limit_item: data,   value: "unlimited", description: "max size of data segment" }
+    - { limit_item: fsize,  value: "unlimited", description: "max file size" }
+    - { limit_item: nofile, value: "65536",     description: "max no. of opened files" }
+    - { limit_item: cpu,    value: "unlimited", description: "max amount of processor time" }
+    - { limit_item: nproc,  value: "16384",     description: "max no. of user processes" }
