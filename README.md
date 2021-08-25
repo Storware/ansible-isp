@@ -1,7 +1,7 @@
 Role Name
 =========
 
-This role deploys IBM Spectrum Protect.
+This role deploys IBM Spectrum Protect Server.
 
 Requirements
 ------------
@@ -33,7 +33,7 @@ and multiple agents on `agents` hosts
 ```
 - hosts: isp
   roles:
-   - xe0nic.ansible_isp
+   - xe0nic.ansible_isp_server
 ```
 
 Example hosts inventory (you need to make sure that SSH public key authentication for
