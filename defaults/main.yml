@@ -1,8 +1,8 @@
 ---
 isp_server_version: "8.1.12.000"
-isp_server_short_version: "{{ isp_server_version | regex_replace('([0-9]+)[.]([0-9]+)[.]([0-9]+)[.].*', 'v\\1r\\2') }}"
+isp_short_version: "{{ isp_server_version | regex_replace('([0-9]+)[.]([0-9]+)[.]([0-9]+)[.].*', 'v\\1r\\2') }}"
 isp_server_installer_filename: "{{ isp_server_version }}-IBM-SPSRV-Linuxx86_64.bin"
-isp_server_download_url: "http://ftp.software.ibm.com/storage/tivoli-storage-management/maintenance/server/{{ isp_server_short_version }}/Linux/{{ isp_server_version }}/x86_64/{{ isp_server_installer_filename }}"
+isp_server_download_url: "http://ftp.software.ibm.com/storage/tivoli-storage-management/maintenance/server/{{ isp_short_version }}/Linux/{{ isp_server_version }}/x86_64/{{ isp_server_installer_filename }}"
 isp_server_installer_local_dir: "/tmp/isp"
 isp_server_installer_local_path: "{{ isp_server_installer_local_dir }}/{{ isp_server_installer_filename }}"
 isp_server_response_file: "isp.resp.xml"
