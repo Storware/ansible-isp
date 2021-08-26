@@ -57,21 +57,18 @@
     creates: "{{ isp_dir }}"
 
 - name: Check if DB2 instance exists
-  shell:
-    cmd: "{{ db2ilist_bin }}"
+  shell: "{{ db2ilist_bin }}"
   register: db2ilist_output
   changed_when: false
 
 - name: Initialize DB2 instance
-  shell:
-    cmd: "{{ db2icrt_bin }} -a server -u {{ isp_user }} {{ isp_user }}"
+  shell: "{{ db2icrt_bin }} -a server -u {{ isp_user }} {{ isp_user }}"
   when: isp_user not in db2ilist_output.stdout
 
 - name: Fetch DB manager config
   become: yes
   become_user: "{{ isp_user }}"
-  shell:
-    cmd: "source ~/.bashrc && db2 get dbm cfg"
+  shell: "source ~/.bashrc && db2 get dbm cfg"
   register: db2_get_dbm_cfg_output
   changed_when: false
 
@@ -90,7 +87,6 @@
 - name: Update default database path to IBM Spectrum Protect instance path
   become: yes
   become_user: "{{ isp_user }}"
-  shell:
-    cmd: "source ~/.bashrc && db2 update dbm cfg using dftdbpath '{{ isp_instance_path }}'"
+  shell: "source ~/.bashrc && db2 update dbm cfg using dftdbpath '{{ isp_instance_path }}'"
   register: db2_get_dbm_cfg_output
   when: db2_dftdbpath != isp_instance_path
