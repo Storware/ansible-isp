@@ -48,8 +48,18 @@
   file:
     state: directory
     path: "{{ item }}"
+    owner: "{{ isp_user }}"
+    group: "{{ isp_group }}"
     mode: "0770"
   loop: "{{ mountpoints }}"
+
+- name: Make sure IBM Spectrum Protect instance path exists
+  file:
+    state: directory
+    path: "{{ isp_instance_path }}"
+    owner: "{{ isp_user }}"
+    group: "{{ isp_group }}"
+    mode: "0770"
 
 - set_fact:
     devices_and_fs_info: "{{ devices_and_fs_info | default([]) | union([item]) }}"
@@ -101,10 +111,18 @@
     state: mounted
   loop: "{{ devices_and_fs_info }}"
 
+- name: Set permissions on data directory
+  file:
+    state: directory
+    path: "{{ isp_data_dir }}"
+    owner: "{{ isp_user }}"
+    group: "{{ isp_group }}"
+    mode: "0770"
+
 - name: Set permissions on each mount point
   file:
-    path: "{{ item.path }}"
     state: directory
+    path: "{{ item.path }}"
     owner: "{{ isp_user }}"
     group: "{{ isp_group }}"
     mode: "0770"
