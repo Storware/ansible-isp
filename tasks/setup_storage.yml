@@ -67,26 +67,30 @@
     - dev: "{{ isp_db_disk }}"
       fs_type: "{{ isp_db_fs_type }}"
       mkfs_opts: "{{ isp_db_mkfs_opts }}"
+      resizefs: "{{ isp_db_resizefs }}"
       path: "{{ isp_db_path }}"
       fs_mount_opts: "{{ isp_db_fs_mount_opts }}"
     - dev: "{{ isp_activelog_disk }}"
       fs_type: "{{ isp_activelog_fs_type }}"
       mkfs_opts: "{{ isp_activelog_mkfs_opts }}"
+      resizefs: "{{ isp_activelog_resizefs }}"
       path: "{{ isp_activelog_path }}"
       fs_mount_opts: "{{ isp_activelog_fs_mount_opts }}"
     - dev: "{{ isp_archlog_disk }}"
       fs_type: "{{ isp_archlog_fs_type }}"
       mkfs_opts: "{{ isp_archlog_mkfs_opts }}"
+      resizefs: "{{ isp_archlog_resizefs }}"
       path: "{{ isp_archlog_path }}"
       fs_mount_opts: "{{ isp_archlog_fs_mount_opts }}"
     - dev: "{{ isp_dbbackup_disk }}"
       fs_type: "{{ isp_dbbackup_fs_type }}"
       mkfs_opts: "{{ isp_dbbackup_mkfs_opts }}"
+      resizefs: "{{ isp_dbbackup_resizefs }}"
       path: "{{ isp_dbbackup_path }}"
       fs_mount_opts: "{{ isp_dbbackup_fs_mount_opts }}"
 
 - set_fact:
-    devices_and_fs_info: "{{ devices_and_fs_info + [dict(dev=item, fs_type=isp_storage_fs_type, mkfs_opts=isp_storage_mkfs_opts, path=isp_storage_paths[i], fs_mount_opts=isp_storage_fs_mount_opts)] }}"
+    devices_and_fs_info: "{{ devices_and_fs_info + [dict(dev=item, fs_type=isp_storage_fs_type, mkfs_opts=isp_storage_mkfs_opts, resizefs=isp_storage_resizefs, path=isp_storage_paths[i], fs_mount_opts=isp_storage_fs_mount_opts)] }}"
   loop: "{{ isp_storage_disks }}"
   loop_control:
     index_var: i
@@ -100,6 +104,7 @@
     fstype: "{{ item.fs_type }}"
     dev: "{{ item.dev }}"
     opts: "{{ item.mkfs_opts }}"
+    resizefs: "{{ item.resizefs }}"
   loop: "{{ devices_and_fs_info }}"
 
 - name: Mount all file systems

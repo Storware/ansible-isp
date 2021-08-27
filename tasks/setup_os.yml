@@ -10,6 +10,8 @@
     uid: "{{ isp_uid }}"
     comment: "IBM Spectrum Protect user"
     groups: "{{ isp_group }}"
+    home: "{{ isp_user_home }}"
+    create_home: true
     state: present
 
 - name: Set user limits for {{ isp_user }}

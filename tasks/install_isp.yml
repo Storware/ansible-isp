@@ -54,7 +54,7 @@
   shell:
     cmd: "./install.sh -s -input {{ isp_server_response_file }} -acceptLicense -vmargs '-DBYPASS_TSM_REQ_CHECKS=true'"
     chdir: "{{ isp_server_installer_local_dir }}"
-    creates: "{{ isp_dir }}"
+    creates: "{{ isp_dir }}/server"
 
 - name: Check if DB2 instance exists
   shell: "{{ db2ilist_bin }}"
@@ -90,3 +90,66 @@
   shell: "source ~/.bashrc && db2 update dbm cfg using dftdbpath '{{ isp_instance_path }}'"
   register: db2_get_dbm_cfg_output
   when: db2_dftdbpath != isp_instance_path
+
+- name: Ensure IBM Spectrum Protect environment variables for database manager are set in userprofile file
+  blockinfile:
+    path: "{{ isp_user_home }}/sqllib/userprofile"
+    block: |
+      DSMI_CONFIG={{ isp_instance_path }}/tsmdbmgr.opt
+      DSMI_DIR={{ isp_dir }}/server/bin/dbbkapi
+      DSMI_LOG={{ isp_instance_path }}
+      export DSMI_CONFIG DSMI_DIR DSMI_LOG
+
+- name: Ensure IBM Spectrum Protect environment variables for database manager are set in usercshrc file
+  blockinfile:
+    path: "{{ isp_user_home }}/sqllib/usercshrc"
+    block: |
+      setenv DSMI_CONFIG={{ isp_instance_path }}/tsmdbmgr.opt
+      setenv DSMI_DIR={{ isp_dir }}/server/bin/dbbkapi
+      setenv DSMI_LOG={{ isp_instance_path }}
+
+- name: Update database manager opt file (tsmdbmgr.opt)
+  lineinfile:
+    dest: "{{ isp_instance_path }}/tsmdbmgr.opt"
+    create: true
+    owner:
+    regexp: '^SERVERNAME\s+'
+    line: "SERVERNAME\t{{ isp_dbmgropt_servername | upper }}"
+    state: present
+
+- name: Update dsm.sys file for database manager
+  blockinfile:
+    path: "{{ isp_dir }}/server/bin/dbbkapi/dsm.sys"
+    create: true
+    block: |
+      servername {{ isp_dbmgropt_servername | upper }}
+      commmethod tcpip
+      tcpserveraddr localhost
+      tcpport {{ isp_port }}
+      errorlogname {{ isp_instance_path }}/tsmdbmgr.log
+      nodename $$_TSMDBMGR_$$
+
+- name: Check if DB2NOEXITLIST DB2 parameter is set
+  become: yes
+  become_user: "{{ isp_user }}"
+  shell: "source ~/.bashrc && db2set"
+  register: db2set_output
+  changed_when: false
+
+- name: Set variable for DB2NOEXITLIST existence
+  set_fact:
+    db2noexitlist_set: "{{ db2set_output.stdout_lines | select('match','DB2NOEXITLIST=ON') | length == 1 }}"
+
+- name: Set DB2NOEXITLIST DB2 parameter
+  become: yes
+  become_user: "{{ isp_user }}"
+  shell: "source ~/.bashrc && db2set DB2NOEXITLIST=ON"
+  when: not db2noexitlist_set
+
+- name: Format database
+  become: yes
+  become_user: "{{ isp_user }}"
+  shell:
+    cmd: "source ~/.bashrc && dsmserv format dbdir={{ isp_db_path }} activelogsize={{ isp_db_activelogsize }} activelogdirectory={{ isp_activelog_path }} archlogdirectory={{ isp_archlog_path }}"
+    chdir: "{{ isp_instance_path }}"
+    creates: "{{ isp_db_path }}/{{ isp_user }}/NODE0000/.SQLCRT.FLG"
