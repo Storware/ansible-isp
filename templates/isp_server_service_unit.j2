@@ -1,0 +1,13 @@
+[Unit]
+Description=IBM Spectrum Protect Server instance {{ isp_instance_name }}
+
+[Service]
+TasksMax=infinity
+Type=oneshot
+RemainAfterExit=true
+ExecStart={{ isp_dir }}/server/bin/{{ isp_instance_name }} start
+ExecStop={{ isp_dir }}/server/bin/{{ isp_instance_name }} stop
+ExecReload={{ isp_dir }}/server/bin/{{ isp_instance_name }} restart
+
+[Install]
+WantedBy=multi-user.target

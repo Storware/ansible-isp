@@ -62,8 +62,8 @@
   changed_when: false
 
 - name: Initialize DB2 instance
-  shell: "{{ db2icrt_bin }} -a server -u {{ isp_user }} {{ isp_user }}"
-  when: isp_user not in db2ilist_output.stdout
+  shell: "{{ db2icrt_bin }} -a server -u {{ isp_user }} {{ isp_instance_name }}"
+  when: isp_instance_name not in db2ilist_output.stdout
 
 - name: Fetch DB manager config
   become: yes
@@ -152,4 +152,16 @@
   shell:
     cmd: "source ~/.bashrc && dsmserv format dbdir={{ isp_db_path }} activelogsize={{ isp_db_activelogsize }} activelogdirectory={{ isp_activelog_path }} archlogdirectory={{ isp_archlog_path }}"
     chdir: "{{ isp_instance_path }}"
-    creates: "{{ isp_db_path }}/{{ isp_user }}/NODE0000/.SQLCRT.FLG"
+    creates: "{{ isp_db_path }}/{{ isp_instance_name }}/NODE0000/.SQLCRT.FLG"
+
+- name: Install systemd unit file
+  template:
+    src: "{{ isp_server_service_unit_file }}"
+    dest: "/etc/systemd/system/{{ isp_instance_name }}.service"
+
+- name: Start and enable IBM Spectrum Protect Server
+  service:
+    name: "{{ isp_instance_name }}"
+    daemon-reload: yes
+    state: started
+    enabled: false

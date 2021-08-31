@@ -12,16 +12,18 @@ isp_dir: "/opt/tivoli/tsm"
 isp_limits_file: "/etc/security/limits.d/21-isp.conf"
 isp_port: 1500
 isp_port_ssl: 1501
-isp_user: "tsminst1"
+isp_instance_name: "tsminst1"
+isp_user: "{{ isp_instance_name }}"
 isp_uid: 1111
 isp_user_home: "/home/{{ isp_user }}"
+isp_server_service_unit_file: "isp_server_service_unit.j2"
 isp_group: "tsmadmin"
 isp_data_dir: "/isp"
 isp_data_fs_type: "xfs"
 isp_data_mkfs_opts: "-K"
 isp_data_resizefs: true
 isp_data_fs_mount_opts: "defaults,inode64"
-isp_instance_path: "{{ isp_data_dir }}/{{ isp_user }}"
+isp_instance_path: "{{ isp_data_dir }}/{{ isp_instance_name }}"
 isp_db_disk: "/dev/sdb"
 isp_db_path: "{{ isp_data_dir }}/db"
 isp_db_fs_type: "{{ isp_data_fs_type }}"
