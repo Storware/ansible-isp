@@ -17,6 +17,7 @@ isp_user: "{{ isp_instance_name }}"
 isp_uid: 1111
 isp_user_home: "/home/{{ isp_user }}"
 isp_server_service_unit_file: "isp_server_service_unit.j2"
+isp_server_service_script_template_path: "{{ isp_dir }}/server/bin/dsmserv.rc"
 isp_group: "tsmadmin"
 isp_data_dir: "/isp"
 isp_data_fs_type: "xfs"

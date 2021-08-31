@@ -154,6 +154,20 @@
     chdir: "{{ isp_instance_path }}"
     creates: "{{ isp_db_path }}/{{ isp_instance_name }}/NODE0000/.SQLCRT.FLG"
 
+- name: Copy service script
+  copy:
+    src: "{{ isp_server_service_script_template_path }}"
+    dest: "{{ isp_dir }}/server/bin/{{ isp_instance_name }}"
+    mode: "0755"
+    remote_src: true
+
+- name: Update instance directory variable in the service script
+  lineinfile:
+    path: "{{ isp_dir }}/server/bin/{{ isp_instance_name }}"
+    regexp: '^instance_dir=".*"$'
+    line: 'instance_dir="{{ isp_instance_path }}"'
+    state: present
+
 - name: Install systemd unit file
   template:
     src: "{{ isp_server_service_unit_file }}"
