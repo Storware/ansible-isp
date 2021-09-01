@@ -47,12 +47,12 @@
 
 - name: Prepare IBM Spectrum Protect Server installer response file
   template:
-    src: "{{ isp_server_response_file }}.j2"
-    dest: "{{ isp_server_installer_local_dir }}/{{ isp_server_response_file }}"
+    src: "isp.resp.xml.j2"
+    dest: "{{ isp_server_installer_local_dir }}/isp.resp.xml"
 
 - name: Install IBM Spectrum Protect Server
   shell:
-    cmd: "./install.sh -s -input {{ isp_server_response_file }} -acceptLicense -vmargs '-DBYPASS_TSM_REQ_CHECKS=true'"
+    cmd: "./install.sh -s -input isp.resp.xml -acceptLicense -vmargs '-DBYPASS_TSM_REQ_CHECKS=true'"
     chdir: "{{ isp_server_installer_local_dir }}"
     creates: "{{ isp_dir }}/server"
 
@@ -170,12 +170,32 @@
 
 - name: Install systemd unit file
   template:
-    src: "{{ isp_server_service_unit_file }}"
+    src: isp_server_service_unit.j2
     dest: "/etc/systemd/system/{{ isp_instance_name }}.service"
 
-- name: Start and enable IBM Spectrum Protect Server
+- name: Start IBM Spectrum Protect Server
   service:
     name: "{{ isp_instance_name }}"
     daemon-reload: yes
     state: started
-    enabled: false
+
+- name: Try to login as admin user
+  become: yes
+  become_user: "{{ isp_user }}"
+  shell:
+    cmd: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }} q session"
+    chdir: "{{ isp_instance_path }}"
+  register: dsmadmc_q_session_result
+  failed_when: dsmadmc_q_session_result.rc not in [0, 137]
+  changed_when: false
+  retries: 100
+  delay: 5
+  until: dsmadmc_q_session_result is not failed
+
+- name: Check if admin user exists
+  set_fact:
+    isp_admin_exists: "{{ dsmadmc_q_session_result.rc == 0 }}"
+
+- name: Create IBM Spectrum Protect admin account
+  include_tasks: create_isp_admin.yml
+  when: not isp_admin_exists

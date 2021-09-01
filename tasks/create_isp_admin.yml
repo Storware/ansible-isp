@@ -1,0 +1,41 @@
+---
+- name: Stop IBM Spectrum Protect Server
+  service:
+    name: "{{ isp_instance_name }}"
+    state: stopped
+
+- block:
+  - name: Generate admin user registration script
+    template:
+      src: isp_create_admin.cmd.j2
+      dest: "{{ isp_cmd_file }}"
+  - name: Create admin user
+    become: yes
+    become_user: "{{ isp_user }}"
+    shell:
+      cmd: "source ~/.bashrc && dsmserv runfile {{ isp_cmd_file }}"
+      chdir: "{{ isp_instance_path }}"
+  always:
+    - name: Ensure admin user registration script is deleted
+      file:
+        path: "{{ isp_cmd_file }}"
+        state: absent
+  vars:
+    isp_cmd_file: "{{ isp_instance_path }}/isp_create_admin.cmd"
+
+- name: Start IBM Spectrum Protect Server
+  service:
+    name: "{{ isp_instance_name }}"
+    state: started
+
+- name: Try to login as admin user
+  become: yes
+  become_user: "{{ isp_user }}"
+  shell:
+    cmd: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }} q session"
+    chdir: "{{ isp_instance_path }}"
+  register: dsmadmc_q_session_result
+  changed_when: false
+  retries: 100
+  delay: 5
+  until: dsmadmc_q_session_result is not failed
