@@ -12,6 +12,7 @@ isp_limits_file: "/etc/security/limits.d/21-isp.conf"
 isp_port: 1500
 isp_port_ssl: 1501
 isp_instance_name: "tsminst1"
+isp_server_name: "isp1"
 isp_user: "{{ isp_instance_name }}"
 isp_uid: 1111
 isp_user_home: "/home/{{ isp_user }}"
@@ -60,5 +61,24 @@ isp_db_activelogsize: 32768
 isp_admin_user: "tsmadmin"
 isp_admin_pass: "passw0rd"
 isp_admin_pass_exp: 0
+isp_setopt_template_path: "isp_setopt.cmd.j2"
+isp_setopt_actlogretention: "30 m=d"
+isp_setopt_expinterval: 0
+isp_setopt_maxsession: 999
+isp_setopt_deduprequiresbackup: no
+isp_setopt_dnslookup: no
+isp_setopt_commtimeout: 360
+isp_setopt_idletimeout: 360
+isp_setopt_allowreorgtable: yes
+isp_setopt_allowreorgindex: yes
+isp_setopt_reorgbegintime: "06:00"
+isp_setopt_reorgduration: 4
+isp_setopt_clientdeduptxnlimit: 2048
+isp_setopt_serverdeduptxnlimit: 2048
+isp_setopt_deduptier2filesize: 1024
+isp_setopt_deduptier3filesize: 9999
+isp_setopt_dateformat: 3
+isp_setopt_numopenvolsallowed: 50
+isp_setopt_backupinitiationroot: "off"
 db2icrt_bin: "{{ isp_dir }}/db2/instance/db2icrt"
 db2ilist_bin: "{{ isp_dir }}/db2/bin/db2ilist"

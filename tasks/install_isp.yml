@@ -199,3 +199,22 @@
 - name: Create IBM Spectrum Protect admin account
   include_tasks: create_isp_admin.yml
   when: not isp_admin_exists
+
+- block:
+    - name: Generate basic server configuration macro file
+      template:
+        src: "{{ isp_setopt_template_path }}"
+        dest: "{{ isp_cmd_file }}"
+    - name: Run basic server configuration macro file
+      become: yes
+      become_user: "{{ isp_user }}"
+      shell:
+        cmd: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }} -itemcommit 'macro {{ isp_cmd_file }}'"
+        chdir: "{{ isp_instance_path }}"
+  always:
+    - name: Ensure basic server configuration macro file is deleted
+      file:
+        path: "{{ isp_cmd_file }}"
+        state: absent
+  vars:
+    isp_cmd_file: "{{ isp_instance_path }}/isp_setopt.cmd"
