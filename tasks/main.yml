@@ -1,4 +1,11 @@
 ---
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+
+- set_fact:
+    kodo_endpoints_installed: "{{ 'kodo-for-endpoints' in ansible_facts.packages }}"
+
 - name: Configure OS
   include_tasks: setup_os.yml
 
@@ -10,6 +17,8 @@
 
 - name: Install IBM Spectrum Protect
   include_tasks: install_isp.yml
+  when: not kodo_endpoints_installed
 
 - name: Configure IBM Spectrum Protect
   include_tasks: configure_isp.yml
+  when: not kodo_endpoints_installed

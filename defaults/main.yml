@@ -62,8 +62,20 @@ isp_storage_resizefs: "{{ isp_data_resizefs }}"
 isp_storage_fs_mount_opts: "{{ isp_data_fs_mount_opts }}"
 isp_stgpool_name: "bdata"
 isp_domain: "storware"
-isp_mgmtclass: "{{ isp_domain }}"
+isp_mgmtclass: "kodo-nolimit"
 isp_policyset: "{{ isp_domain }}"
+isp_create_extra_mgmt_classses: true
+isp_extra_mgmt_classses:
+  - name: "7days"
+    vere: "7"
+    verd: "7"
+    rete: "nolimit"
+    reto: "nolimit"
+  - name: "30days"
+    vere: "30"
+    verd: "30"
+    rete: "nolimit"
+    reto: "nolimit"
 isp_schedule_dbbackup: "10:00"
 isp_schedule_expire: "17:00"
 isp_dbmgropt_servername: "TSMDBMGR"
@@ -90,6 +102,11 @@ isp_setopt_deduptier3filesize: 9999
 isp_setopt_dateformat: 3
 isp_setopt_numopenvolsallowed: 50
 isp_setopt_backupinitiationroot: "off"
+isp_create_service_node: true
+isp_service_node_name: "storware"
+isp_service_node_password: "St0rw@re"
+isp_service_node_maxnump: 100
+isp_service_node_dedup: "client"
 dsmadmc: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }}"
 db2icrt_bin: "{{ isp_dir }}/db2/instance/db2icrt"
 db2ilist_bin: "{{ isp_dir }}/db2/bin/db2ilist"

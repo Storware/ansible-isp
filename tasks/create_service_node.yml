@@ -1,0 +1,19 @@
+---
+- include_tasks: isp_artifact.yml
+  loop:
+    - artifact: "node {{ isp_service_node_name }}"
+      params: "{{ isp_service_node_password }} dom={{ isp_domain }} maxnummp={{ isp_service_node_maxnump }} dedup={{ isp_service_node_dedup }} backdel=yes passexp=0"
+      action: "register"
+    - artifact: "admin {{ isp_service_node_name }}"
+      params: "{{ isp_service_node_password }} passexp=0"
+      action: "register"
+
+- name: Grant administrative privilege class to the service node account
+  shell:
+    cmd: "{{ dsmadmc }} 'grant authority {{ isp_service_node_name }} cl=sys'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+  register: grant_result
+  failed_when: grant_result.rc not in [0, 10]
+  changed_when: grant_result.rc == 0

@@ -1,0 +1,8 @@
+---
+- include_tasks: isp_artifact.yml
+  loop:
+    - artifact: "mgmtclass {{ isp_domain }} {{ isp_policyset }} {{ class.name }}"
+      action: "define"
+    - artifact: "copygroup {{ isp_domain }} {{ isp_policyset }} {{ class.name }}"
+      params: "dest={{ isp_stgpool_name }} vere={{ class.vere }} verd={{ class.verd }} rete={{ class.rete }} reto={{ class.reto }}"
+      action: "define"

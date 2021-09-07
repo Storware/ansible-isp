@@ -40,7 +40,7 @@
     isp_cmd_file: "{{ isp_instance_path }}/isp_setopt.cmd"
 
 - set_fact:
-    isp_stgpool_dirs: "{{ (isp_stgpool_dirs | default([])) + [dict(present=true, artifact='stgpooldirectory ' + isp_stgpool_name, params=isp_storage_paths[i], querystr='stgpooldirectory ' + isp_storage_paths[i])] }}"
+    isp_stgpool_dirs: "{{ (isp_stgpool_dirs | default([])) + [dict(action='define', artifact='stgpooldirectory ' + isp_stgpool_name, params=isp_storage_paths[i], querystr='stgpooldirectory ' + isp_storage_paths[i])] }}"
   loop: "{{ isp_storage_paths }}"
   loop_control:
     index_var: i
@@ -48,17 +48,17 @@
 - include_tasks: isp_artifact.yml
   loop:
     - artifact: "domain standard"
-      present: false
+      action: "delete"
     - artifact: "stgpool backuppool"
-      present: false
+      action: "delete"
     - artifact: "stgpool archivepool"
-      present: false
+      action: "delete"
     - artifact: "devclass {{ isp_dbbackup_devclass }}"
       params: "devt=file maxcap={{ isp_dbbackup_maxcap }} dir={{ isp_dbbackup_path }}"
-      present: true
+      action: "define"
     - artifact: "stgpool {{ isp_stgpool_name }}"
       params: "stgtype=directory reusedelay=1 encrypt=no compression=yes"
-      present: true
+      action: "define"
 
 - include_tasks: isp_artifact.yml
   loop: "{{ isp_stgpool_dirs }}"
@@ -73,14 +73,14 @@
 - include_tasks: isp_artifact.yml
   loop:
     - artifact: "domain {{ isp_domain }}"
-      present: true
+      action: "define"
     - artifact: "policyset {{ isp_domain }} {{ isp_policyset }}"
-      present: true
+      action: "define"
     - artifact: "mgmtclass {{ isp_domain }} {{ isp_policyset }} {{ isp_mgmtclass }}"
-      present: true
+      action: "define"
     - artifact: "copygroup {{ isp_domain }} {{ isp_policyset }} {{ isp_mgmtclass }}"
       params: "dest={{ isp_stgpool_name }} vere=nolimit verd=nolimit rete=nolimit reto=nolimit"
-      present: true
+      action: "define"
 
 - name: Assign default management class
   shell:
@@ -99,11 +99,22 @@
 - include_tasks: isp_artifact.yml
   loop:
     - artifact: "schedule {{ isp_dbbackup_schedule }} t=a"
-      params: "t=a cmd=\"run {{ isp_dbbackup_script }}\" active=yes startt={{ isp_schedule_dbbackup }}"
-      present: true
+      params: "cmd=\"run {{ isp_dbbackup_script }}\" active=yes startt={{ isp_schedule_dbbackup }}"
+      action: "define"
     - artifact: "schedule expire t=a"
       params: "cmd=\"expire inv quiet=yes w=y\" active=yes startt={{ isp_schedule_expire }}"
-      present: true
+      action: "define"
     - artifact: "script {{ isp_dbbackup_script }}"
       params: "\"ba db devclass={{ isp_dbbackup_devclass }} t=f w=y\" Line=010"
-      present: true
+      action: "define"
+
+- name: Create service node
+  include_tasks: create_service_node.yml
+  when: isp_create_service_node
+
+- name: Create extra management classes
+  include_tasks: create_extra_mgmt_classes.yml
+  loop: "{{ isp_extra_mgmt_classses }}"
+  loop_control:
+    loop_var: class
+  when: isp_create_extra_mgmt_classses
