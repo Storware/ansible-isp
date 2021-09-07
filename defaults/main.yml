@@ -61,7 +61,7 @@ isp_storage_mkfs_opts: "{{ isp_data_mkfs_opts }}"
 isp_storage_resizefs: "{{ isp_data_resizefs }}"
 isp_storage_fs_mount_opts: "{{ isp_data_fs_mount_opts }}"
 isp_stgpool_name: "bdata"
-isp_domain: "storware"
+isp_domain: "kodo"
 isp_mgmtclass: "kodo-nolimit"
 isp_policyset: "{{ isp_domain }}"
 isp_create_extra_mgmt_classses: true

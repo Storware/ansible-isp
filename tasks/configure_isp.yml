@@ -89,6 +89,13 @@
   become: yes
   become_user: "{{ isp_user }}"
 
+- name: Create extra management classes
+  include_tasks: create_extra_mgmt_classes.yml
+  loop: "{{ isp_extra_mgmt_classses }}"
+  loop_control:
+    loop_var: class
+  when: isp_create_extra_mgmt_classses
+
 - name: Activate policyset
   shell:
     cmd: "{{ dsmadmc }} 'activate policyset {{ isp_domain }} {{ isp_policyset }}'"
@@ -111,10 +118,3 @@
 - name: Create service node
   include_tasks: create_service_node.yml
   when: isp_create_service_node
-
-- name: Create extra management classes
-  include_tasks: create_extra_mgmt_classes.yml
-  loop: "{{ isp_extra_mgmt_classses }}"
-  loop_control:
-    loop_var: class
-  when: isp_create_extra_mgmt_classses
