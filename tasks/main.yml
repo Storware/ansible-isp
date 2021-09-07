@@ -10,3 +10,6 @@
 
 - name: Install IBM Spectrum Protect
   include_tasks: install_isp.yml
+
+- name: Configure IBM Spectrum Protect
+  include_tasks: configure_isp.yml

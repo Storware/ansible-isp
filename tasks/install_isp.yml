@@ -130,9 +130,9 @@
       nodename $$_TSMDBMGR_$$
 
 - name: Check if DB2NOEXITLIST DB2 parameter is set
+  shell: "source ~/.bashrc && db2set"
   become: yes
   become_user: "{{ isp_user }}"
-  shell: "source ~/.bashrc && db2set"
   register: db2set_output
   changed_when: false
 
@@ -147,12 +147,12 @@
   when: not db2noexitlist_set
 
 - name: Format database
-  become: yes
-  become_user: "{{ isp_user }}"
   shell:
     cmd: "source ~/.bashrc && dsmserv format dbdir={{ isp_db_path }} activelogsize={{ isp_db_activelogsize }} activelogdirectory={{ isp_activelog_path }} archlogdirectory={{ isp_archlog_path }}"
     chdir: "{{ isp_instance_path }}"
     creates: "{{ isp_db_path }}/{{ isp_instance_name }}/NODE0000/.SQLCRT.FLG"
+  become: yes
+  become_user: "{{ isp_user }}"
 
 - name: Copy service script
   copy:
@@ -178,43 +178,3 @@
     name: "{{ isp_instance_name }}"
     daemon-reload: yes
     state: started
-
-- name: Try to login as admin user
-  become: yes
-  become_user: "{{ isp_user }}"
-  shell:
-    cmd: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }} q session"
-    chdir: "{{ isp_instance_path }}"
-  register: dsmadmc_q_session_result
-  failed_when: dsmadmc_q_session_result.rc not in [0, 137]
-  changed_when: false
-  retries: 100
-  delay: 5
-  until: dsmadmc_q_session_result is not failed
-
-- name: Check if admin user exists
-  set_fact:
-    isp_admin_exists: "{{ dsmadmc_q_session_result.rc == 0 }}"
-
-- name: Create IBM Spectrum Protect admin account
-  include_tasks: create_isp_admin.yml
-  when: not isp_admin_exists
-
-- block:
-    - name: Generate basic server configuration macro file
-      template:
-        src: "{{ isp_setopt_template_path }}"
-        dest: "{{ isp_cmd_file }}"
-    - name: Run basic server configuration macro file
-      become: yes
-      become_user: "{{ isp_user }}"
-      shell:
-        cmd: "source ~/.bashrc && dsmadmc -id={{ isp_admin_user }} -pa={{ isp_admin_pass }} -itemcommit 'macro {{ isp_cmd_file }}'"
-        chdir: "{{ isp_instance_path }}"
-  always:
-    - name: Ensure basic server configuration macro file is deleted
-      file:
-        path: "{{ isp_cmd_file }}"
-        state: absent
-  vars:
-    isp_cmd_file: "{{ isp_instance_path }}/isp_setopt.cmd"

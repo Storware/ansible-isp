@@ -1,0 +1,109 @@
+---
+- name: Try to login as admin user
+  shell:
+    cmd: "{{ dsmadmc }} 'q session'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+  register: dsmadmc_q_session_result
+  failed_when: dsmadmc_q_session_result.rc not in [0, 137]
+  changed_when: false
+  retries: 100
+  delay: 5
+  until: dsmadmc_q_session_result is not failed
+
+- name: Check if admin user exists
+  set_fact:
+    isp_admin_exists: "{{ dsmadmc_q_session_result.rc == 0 }}"
+
+- name: Create IBM Spectrum Protect admin account
+  include_tasks: create_isp_admin.yml
+  when: not isp_admin_exists
+
+- block:
+    - name: Generate basic server configuration macro file
+      template:
+        src: "{{ isp_setopt_template_path }}"
+        dest: "{{ isp_cmd_file }}"
+    - name: Run basic server configuration macro file
+      shell:
+        cmd: "{{ dsmadmc }} -itemcommit 'macro {{ isp_cmd_file }}'"
+        chdir: "{{ isp_instance_path }}"
+      become: yes
+      become_user: "{{ isp_user }}"
+  always:
+    - name: Ensure basic server configuration macro file is deleted
+      file:
+        path: "{{ isp_cmd_file }}"
+        state: absent
+  vars:
+    isp_cmd_file: "{{ isp_instance_path }}/isp_setopt.cmd"
+
+- set_fact:
+    isp_stgpool_dirs: "{{ (isp_stgpool_dirs | default([])) + [dict(present=true, artifact='stgpooldirectory ' + isp_stgpool_name, params=isp_storage_paths[i], querystr='stgpooldirectory ' + isp_storage_paths[i])] }}"
+  loop: "{{ isp_storage_paths }}"
+  loop_control:
+    index_var: i
+
+- include_tasks: isp_artifact.yml
+  loop:
+    - artifact: "domain standard"
+      present: false
+    - artifact: "stgpool backuppool"
+      present: false
+    - artifact: "stgpool archivepool"
+      present: false
+    - artifact: "devclass {{ isp_dbbackup_devclass }}"
+      params: "devt=file maxcap={{ isp_dbbackup_maxcap }} dir={{ isp_dbbackup_path }}"
+      present: true
+    - artifact: "stgpool {{ isp_stgpool_name }}"
+      params: "stgtype=directory reusedelay=1 encrypt=no compression=yes"
+      present: true
+
+- include_tasks: isp_artifact.yml
+  loop: "{{ isp_stgpool_dirs }}"
+
+- name: Set database recovery parameters
+  shell:
+    cmd: "{{ dsmadmc }} 'set dbrecovery {{ isp_dbbackup_devclass }} numstreams=1 compress=yes protectkeys=no'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+
+- include_tasks: isp_artifact.yml
+  loop:
+    - artifact: "domain {{ isp_domain }}"
+      present: true
+    - artifact: "policyset {{ isp_domain }} {{ isp_policyset }}"
+      present: true
+    - artifact: "mgmtclass {{ isp_domain }} {{ isp_policyset }} {{ isp_mgmtclass }}"
+      present: true
+    - artifact: "copygroup {{ isp_domain }} {{ isp_policyset }} {{ isp_mgmtclass }}"
+      params: "dest={{ isp_stgpool_name }} vere=nolimit verd=nolimit rete=nolimit reto=nolimit"
+      present: true
+
+- name: Assign default management class
+  shell:
+    cmd: "{{ dsmadmc }} 'assign defmgmtclass {{ isp_domain }} {{ isp_policyset }} {{ isp_mgmtclass }}'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+
+- name: Activate policyset
+  shell:
+    cmd: "{{ dsmadmc }} 'activate policyset {{ isp_domain }} {{ isp_policyset }}'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+
+- include_tasks: isp_artifact.yml
+  loop:
+    - artifact: "schedule {{ isp_dbbackup_schedule }} t=a"
+      params: "t=a cmd=\"run {{ isp_dbbackup_script }}\" active=yes startt={{ isp_schedule_dbbackup }}"
+      present: true
+    - artifact: "schedule expire t=a"
+      params: "cmd=\"expire inv quiet=yes w=y\" active=yes startt={{ isp_schedule_expire }}"
+      present: true
+    - artifact: "script {{ isp_dbbackup_script }}"
+      params: "\"ba db devclass={{ isp_dbbackup_devclass }} t=f w=y\" Line=010"
+      present: true

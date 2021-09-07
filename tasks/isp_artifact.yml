@@ -1,0 +1,18 @@
+---
+- name: "Query {{ item.querystr if item.querystr is defined else item.artifact }}"
+  shell:
+    cmd: "{{ dsmadmc }} 'query {{ item.querystr if item.querystr is defined else item.artifact }}'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+  register: query_result
+  changed_when: false
+  failed_when: query_result.rc not in [ 0, 11 ]
+
+- name: "{{ 'Define' if item.present else 'Delete' }} {{ item.artifact }}"
+  shell:
+    cmd: "{{ dsmadmc }} '{{ 'define' if item.present else 'delete' }} {{ item.artifact }} {{ item.params|default('') }}'"
+    chdir: "{{ isp_instance_path }}"
+  become: yes
+  become_user: "{{ isp_user }}"
+  when: (item.present and query_result.rc == 11) or (not item.present and query_result.rc == 0)
