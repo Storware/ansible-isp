@@ -138,7 +138,7 @@
 
 - name: Set variable for DB2NOEXITLIST existence
   set_fact:
-    db2noexitlist_set: "{{ db2set_output.stdout_lines | select('match','DB2NOEXITLIST=ON') | length == 1 }}"
+    db2noexitlist_set: "{{ db2set_output.stdout_lines | select('match','DB2NOEXITLIST=ON') | list | length == 1 }}"
 
 - name: Set DB2NOEXITLIST DB2 parameter
   become: yes
