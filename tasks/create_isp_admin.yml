@@ -7,7 +7,7 @@
 - block:
   - name: Generate admin user registration script
     template:
-      src: isp_create_admin.cmd.j2
+      src: create_isp_admin.cmd.j2
       dest: "{{ isp_cmd_file }}"
   - name: Create admin user
     become: yes

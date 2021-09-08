@@ -20,24 +20,10 @@
   include_tasks: create_isp_admin.yml
   when: not isp_admin_exists
 
-- block:
-    - name: Generate basic server configuration macro file
-      template:
-        src: "{{ isp_setopt_template_path }}"
-        dest: "{{ isp_cmd_file }}"
-    - name: Run basic server configuration macro file
-      shell:
-        cmd: "{{ dsmadmc }} -itemcommit 'macro {{ isp_cmd_file }}'"
-        chdir: "{{ isp_instance_path }}"
-      become: yes
-      become_user: "{{ isp_user }}"
-  always:
-    - name: Ensure basic server configuration macro file is deleted
-      file:
-        path: "{{ isp_cmd_file }}"
-        state: absent
+- name: Basic server configuration macro file
+  include_tasks: isp_macro.yml
   vars:
-    isp_cmd_file: "{{ isp_instance_path }}/isp_setopt.cmd"
+    macro_template: "{{ isp_setopt_template_path }}"
 
 - set_fact:
     isp_stgpool_dirs: "{{ (isp_stgpool_dirs | default([])) + [dict(action='define', artifact='stgpooldirectory ' + isp_stgpool_name, params=isp_storage_paths[i], querystr='stgpooldirectory ' + isp_storage_paths[i])] }}"
@@ -112,8 +98,12 @@
       params: "cmd=\"expire inv quiet=yes w=y\" active=yes startt={{ isp_schedule_expire }}"
       action: "define"
     - artifact: "script {{ isp_dbbackup_script }}"
-      params: "\"ba db devclass={{ isp_dbbackup_devclass }} t=f w=y\" Line=010"
       action: "define"
+
+- name: Database backup script macro
+  include_tasks: isp_macro.yml
+  vars:
+    macro_template: "{{ isp_dbbackup_script_template_path }}"
 
 - name: Create service node
   include_tasks: create_service_node.yml

@@ -1,0 +1,5 @@
+update script {{ isp_dbbackup_script }} "ba db devclass={{ isp_dbbackup_devclass }} t=f w=y" Line=010
+update script {{ isp_dbbackup_script }} "if (ERROR) exit" Line=020
+update script {{ isp_dbbackup_script }} "del volhist t=dbb todate=today-1" Line=030
+update script {{ isp_dbbackup_script }} "backup devconfig file=/isp/dbbackup/devconfig.old" Line=040
+update script {{ isp_dbbackup_script }} "backup volhist file=/isp/dbbackup/volhist.old" Line=050

@@ -52,6 +52,7 @@ isp_dbbackup_maxcap: "50G"
 isp_dbbackup_devclass: "dbbackup"
 isp_dbbackup_schedule: "{{ isp_dbbackup_devclass }}"
 isp_dbbackup_script: "{{ isp_dbbackup_devclass }}"
+isp_dbbackup_script_template_path: "dbbackup.script.mac.j2"
 isp_storage_disks:
   - "/dev/sdf"
 isp_storage_paths:
@@ -83,7 +84,7 @@ isp_db_activelogsize: 32768
 isp_admin_user: "tsmadmin"
 isp_admin_pass: "passw0rd"
 isp_admin_pass_exp: 0
-isp_setopt_template_path: "isp_setopt.cmd.j2"
+isp_setopt_template_path: "setopt.mac.j2"
 isp_setopt_actlogretention: "30 m=d"
 isp_setopt_expinterval: 0
 isp_setopt_maxsession: 999

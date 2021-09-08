@@ -1,0 +1,19 @@
+---
+- block:
+    - name: Prepare macro file ({{ macro_file }})
+      template:
+        src: "{{ macro_template }}"
+        dest: "{{ macro_file }}"
+    - name: Run macro file
+      shell:
+        cmd: "{{ dsmadmc }} -itemcommit 'macro {{ macro_file }}'"
+        chdir: "{{ isp_instance_path }}"
+      become: yes
+      become_user: "{{ isp_user }}"
+  always:
+    - name: Ensure macro file ({{ macro_file }}) is deleted
+      file:
+        path: "{{ macro_file }}"
+        state: absent
+  vars:
+    macro_file: "{{ isp_instance_path }}/{{ macro_template | basename | replace('.j2', '') }}"

@@ -170,7 +170,7 @@
 
 - name: Install systemd unit file
   template:
-    src: isp_server_service_unit.j2
+    src: service_unit.j2
     dest: "/etc/systemd/system/{{ isp_instance_name }}.service"
 
 - name: Start IBM Spectrum Protect Server
