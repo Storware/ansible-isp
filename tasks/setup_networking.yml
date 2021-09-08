@@ -1,7 +1,7 @@
 ---
 - name: Setting up IBM Spectrum Protect Server FQDN variable
   set_fact:
-    isp_fqdn: "{{ inventory_hostname }}"
+    isp_fqdn: "{{ ansible_nodename }}"
   when: isp_fqdn is undefined
 
 - name: Setting up IBM Spectrum Protect IP variable - trying address from SSH connection variable
