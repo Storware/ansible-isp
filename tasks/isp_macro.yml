@@ -4,7 +4,7 @@
       template:
         src: "{{ macro_template }}"
         dest: "{{ macro_file }}"
-    - name: Run macro file
+    - name: Run macro file ({{ macro_file }})
       shell:
         cmd: "{{ dsmadmc }} -itemcommit 'macro {{ macro_file }}'"
         chdir: "{{ isp_instance_path }}"
