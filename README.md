@@ -1,4 +1,4 @@
-Role Name
+IBM Spectrum Protect Server
 =========
 
 This role deploys IBM Spectrum Protect Server for Kodo for Endpoints
