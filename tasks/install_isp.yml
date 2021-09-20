@@ -136,7 +136,7 @@
   register: db2set_output
   changed_when: false
 
-- name: Set variable for DB2NOEXITLIST existence
+- name: Check if DB2NOEXITLIST variable is set to ON
   set_fact:
     db2noexitlist_set: "{{ db2set_output.stdout_lines | select('match','DB2NOEXITLIST=ON') | list | length == 1 }}"
 
