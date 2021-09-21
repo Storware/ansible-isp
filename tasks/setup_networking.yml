@@ -45,3 +45,19 @@
     permanent: yes
     immediate: yes
     state: enabled
+
+- name: Firewall - open IBM Spectrum Protect Server admin port
+  firewalld:
+    port: "{{ isp_admin_port }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Firewall - open IBM Spectrum Protect Server admin port (SSL)
+  firewalld:
+    port: "{{ isp_admin_port_ssl }}/tcp"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled

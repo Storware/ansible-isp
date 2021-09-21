@@ -11,6 +11,8 @@ isp_dir: "/opt/tivoli/tsm"
 isp_limits_file: "/etc/security/limits.d/21-isp.conf"
 isp_port: 1500
 isp_port_ssl: 1501
+isp_admin_port: 1502
+isp_admin_port_ssl: 1503
 isp_instance_name: "tsminst1"
 isp_server_name: "isp1"
 isp_user: "{{ isp_instance_name }}"

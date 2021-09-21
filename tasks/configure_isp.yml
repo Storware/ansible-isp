@@ -108,3 +108,10 @@
 - name: Create service node
   include_tasks: create_service_node.yml
   when: isp_create_service_node
+
+- name: Download SSL certificate of the ISP server
+  fetch:
+    src: "{{ isp_instance_path }}/cert256.arm"
+    dest: "cert256.arm"
+    mode: "0644"
+    flat: true

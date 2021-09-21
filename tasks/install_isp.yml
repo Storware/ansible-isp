@@ -112,7 +112,8 @@
   lineinfile:
     dest: "{{ isp_instance_path }}/tsmdbmgr.opt"
     create: true
-    owner:
+    owner: "{{ isp_user }}"
+    group: "{{ isp_user }}"
     regexp: '^SERVERNAME\s+'
     line: "SERVERNAME\t{{ isp_dbmgropt_servername | upper }}"
     state: present
@@ -145,6 +146,25 @@
   become_user: "{{ isp_user }}"
   shell: "source ~/.bashrc && db2set DB2NOEXITLIST=ON"
   when: not db2noexitlist_set
+
+- name: Set IBM Spectrum Protect server options (dsmserv.opt)
+  lineinfile:
+    dest: "{{ isp_instance_path }}/dsmserv.opt"
+    create: true
+    owner: "{{ isp_user }}"
+    group: "{{ isp_user }}"
+    regexp: '^{{ item.key }}\s+'
+    line: "{{ item.key }}\t{{ item.value }}"
+    state: present
+  loop:
+    - { key: "commmethod", value: "tcpip" }
+    - { key: "tcpport", value: "{{ isp_port }}" }
+    - { key: "tcpadminport", value: "{{ isp_admin_port }}" }
+    - { key: "ssltcpport", value: "{{ isp_port_ssl }}" }
+    - { key: "ssltcpadminport", value: "{{ isp_admin_port_ssl }}" }
+    - { key: "ssltls12", value: "yes" }
+    - { key: "devconfig", value: "{{ isp_instance_path }}/devconfig.dat" }
+    - { key: "volhist", value: "{{ isp_instance_path }}/volhist.dat" }
 
 - name: Format database
   shell:

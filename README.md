@@ -26,6 +26,8 @@ isp_dir: "/opt/tivoli/tsm"
 isp_limits_file: "/etc/security/limits.d/21-isp.conf"
 isp_port: 1500
 isp_port_ssl: 1501
+isp_admin_port: 1502
+isp_admin_port_ssl: 1503
 isp_instance_name: "tsminst1"
 isp_server_name: "isp1"
 isp_user: "{{ isp_instance_name }}"
@@ -135,7 +137,11 @@ so you can also download it manually, upload it to the remote machine and set th
 to something like `file:///tmp/8.1.12.000-IBM-SPSRV-Linuxx86_64.bin` which will copy installer from local
 * `iim_dir` - IIM installation directory
 * `iim_shared_dir` - IIM shared directory
-* `isp_dir` - ISP installation directory
+* `isp_dir` - ISP installation director
+* `isp_port`: ISP client port (non-SSL) 
+* `isp_port_ssl`: ISP client port (SSL)
+* `isp_admin_port`: ISP administrative port (non-SSL)
+* `isp_admin_port_ssl`: ISP administrative port (SSL)
 * `isp_instance_name` - ISP server instance name
 * `isp_server_name` - ISP server name
 * `isp_user` - service user name for ISP server
