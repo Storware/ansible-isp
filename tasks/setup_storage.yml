@@ -44,6 +44,68 @@
     path: "{{ item }}"
   loop: "{{ devices }}"
 
+- set_fact:
+    devices_and_fs_info: "{{ devices_and_fs_info | default([]) | union([item]) }}"
+  loop:
+    - dev: "{{ isp_db_disk }}"
+      min_size: "{{ isp_db_disk_min_size }}"
+      size: "{{ ansible_facts['devices'][isp_db_disk | basename]['sectors']|int * ansible_facts['devices'][isp_db_disk | basename]['sectorsize']|int }}"
+      fs_type: "{{ isp_db_fs_type }}"
+      mkfs_opts: "{{ isp_db_mkfs_opts }}"
+      resizefs: "{{ isp_db_resizefs }}"
+      path: "{{ isp_db_path }}"
+      fs_mount_opts: "{{ isp_db_fs_mount_opts }}"
+    - dev: "{{ isp_activelog_disk }}"
+      min_size: "{{ isp_activelog_disk_min_size }}"
+      size: "{{ ansible_facts['devices'][isp_activelog_disk | basename]['sectors']|int * ansible_facts['devices'][isp_activelog_disk | basename]['sectorsize']|int }}"
+      fs_type: "{{ isp_activelog_fs_type }}"
+      mkfs_opts: "{{ isp_activelog_mkfs_opts }}"
+      resizefs: "{{ isp_activelog_resizefs }}"
+      path: "{{ isp_activelog_path }}"
+      fs_mount_opts: "{{ isp_activelog_fs_mount_opts }}"
+    - dev: "{{ isp_archlog_disk }}"
+      min_size: "{{ isp_archlog_disk_min_size }}"
+      size: "{{ ansible_facts['devices'][isp_archlog_disk | basename]['sectors']|int * ansible_facts['devices'][isp_archlog_disk | basename]['sectorsize']|int }}"
+      fs_type: "{{ isp_archlog_fs_type }}"
+      mkfs_opts: "{{ isp_archlog_mkfs_opts }}"
+      resizefs: "{{ isp_archlog_resizefs }}"
+      path: "{{ isp_archlog_path }}"
+      fs_mount_opts: "{{ isp_archlog_fs_mount_opts }}"
+    - dev: "{{ isp_dbbackup_disk }}"
+      min_size: "{{ isp_dbbackup_disk_min_size }}"
+      size: "{{ ansible_facts['devices'][isp_dbbackup_disk | basename]['sectors']|int * ansible_facts['devices'][isp_dbbackup_disk | basename]['sectorsize']|int }}"
+      fs_type: "{{ isp_dbbackup_fs_type }}"
+      mkfs_opts: "{{ isp_dbbackup_mkfs_opts }}"
+      resizefs: "{{ isp_dbbackup_resizefs }}"
+      path: "{{ isp_dbbackup_path }}"
+      fs_mount_opts: "{{ isp_dbbackup_fs_mount_opts }}"
+
+- set_fact:
+    storage_capacity: "{{ storage_capacity|default(0) + (ansible_facts['devices'][item | basename]['sectors']|int * ansible_facts['devices'][item | basename]['sectorsize']|int) }}"
+    devices_and_fs_info: "{{ devices_and_fs_info + [dict(dev=item, min_size=isp_storage_disk_min_size|int, size=(ansible_facts['devices'][item | basename]['sectors']|int * ansible_facts['devices'][item | basename]['sectorsize']|int), fs_type=isp_storage_fs_type, mkfs_opts=isp_storage_mkfs_opts, resizefs=isp_storage_resizefs, path=isp_storage_paths[i], fs_mount_opts=isp_storage_fs_mount_opts)] }}"
+  loop: "{{ isp_storage_disks }}"
+  loop_control:
+    index_var: i
+
+- name: Show total size of storage disks
+  debug:
+    msg: "Total storage space on storage disks is {{ storage_capacity }} bytes"
+
+- name: Show block devices and mountpoints configuration
+  debug:
+    var: devices_and_fs_info
+
+- name: Check if all disks meet minimum size requirement
+  fail:
+    msg: "Size of '{{ item.dev }}' disk ({{ item.size }} bytes) is lower than minimum required ({{ item.min_size }} bytes)"
+  when: item.size < item.min_size
+  loop: "{{ devices_and_fs_info }}"
+
+- name: Check if total size of storage disks meets minimum size requirement
+  fail:
+    msg: "Total size of storage disks ({{ storage_capacity }} bytes) is lower than minimum required ({{ isp_storage_min_capacity }} bytes)"
+  when: storage_capacity < isp_storage_min_capacity
+
 - name: Make sure all mount mount points exist
   file:
     state: directory
@@ -60,44 +122,6 @@
     owner: "{{ isp_user }}"
     group: "{{ isp_group }}"
     mode: "0770"
-
-- set_fact:
-    devices_and_fs_info: "{{ devices_and_fs_info | default([]) | union([item]) }}"
-  loop:
-    - dev: "{{ isp_db_disk }}"
-      fs_type: "{{ isp_db_fs_type }}"
-      mkfs_opts: "{{ isp_db_mkfs_opts }}"
-      resizefs: "{{ isp_db_resizefs }}"
-      path: "{{ isp_db_path }}"
-      fs_mount_opts: "{{ isp_db_fs_mount_opts }}"
-    - dev: "{{ isp_activelog_disk }}"
-      fs_type: "{{ isp_activelog_fs_type }}"
-      mkfs_opts: "{{ isp_activelog_mkfs_opts }}"
-      resizefs: "{{ isp_activelog_resizefs }}"
-      path: "{{ isp_activelog_path }}"
-      fs_mount_opts: "{{ isp_activelog_fs_mount_opts }}"
-    - dev: "{{ isp_archlog_disk }}"
-      fs_type: "{{ isp_archlog_fs_type }}"
-      mkfs_opts: "{{ isp_archlog_mkfs_opts }}"
-      resizefs: "{{ isp_archlog_resizefs }}"
-      path: "{{ isp_archlog_path }}"
-      fs_mount_opts: "{{ isp_archlog_fs_mount_opts }}"
-    - dev: "{{ isp_dbbackup_disk }}"
-      fs_type: "{{ isp_dbbackup_fs_type }}"
-      mkfs_opts: "{{ isp_dbbackup_mkfs_opts }}"
-      resizefs: "{{ isp_dbbackup_resizefs }}"
-      path: "{{ isp_dbbackup_path }}"
-      fs_mount_opts: "{{ isp_dbbackup_fs_mount_opts }}"
-
-- set_fact:
-    devices_and_fs_info: "{{ devices_and_fs_info + [dict(dev=item, fs_type=isp_storage_fs_type, mkfs_opts=isp_storage_mkfs_opts, resizefs=isp_storage_resizefs, path=isp_storage_paths[i], fs_mount_opts=isp_storage_fs_mount_opts)] }}"
-  loop: "{{ isp_storage_disks }}"
-  loop_control:
-    index_var: i
-
-- name: Show block devices and mountpoints configuration
-  debug:
-    var: devices_and_fs_info
 
 - name: Create filesystem for each device
   filesystem:
