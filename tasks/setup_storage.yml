@@ -98,13 +98,13 @@
 - name: Check if all disks meet minimum size requirement
   fail:
     msg: "Size of '{{ item.dev }}' disk ({{ item.size }} bytes) is lower than minimum required ({{ item.min_size }} bytes)"
-  when: item.size < item.min_size
+  when: item.size|int < item.min_size|int
   loop: "{{ devices_and_fs_info }}"
 
 - name: Check if total size of storage disks meets minimum size requirement
   fail:
     msg: "Total size of storage disks ({{ storage_capacity }} bytes) is lower than minimum required ({{ isp_storage_min_capacity }} bytes)"
-  when: storage_capacity < isp_storage_min_capacity
+  when: storage_capacity|int < isp_storage_min_capacity|int
 
 - name: Make sure all mount mount points exist
   file:
