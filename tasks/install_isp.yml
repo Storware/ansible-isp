@@ -122,6 +122,7 @@
   blockinfile:
     path: "{{ isp_dir }}/server/bin/dbbkapi/dsm.sys"
     create: true
+    marker: "* {mark} ANSIBLE MANAGED BLOCK"
     block: |
       servername {{ isp_dbmgropt_servername | upper }}
       commmethod tcpip
