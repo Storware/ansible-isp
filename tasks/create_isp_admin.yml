@@ -4,6 +4,11 @@
     name: "{{ isp_instance_name }}"
     state: stopped
 
+- name: Wait until the ISP lock file is removed
+  ansible.builtin.wait_for:
+    path: "{{ isp_instance_path }}/dsmserv.v6lock"
+    state: absent
+
 - block:
   - name: Generate admin user registration script
     template:
